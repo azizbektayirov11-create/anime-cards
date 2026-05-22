@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anime Carta Gacha</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@400;700&display=swap');
+
+:root {
+  --bg: #04080f;
+  --panel: #0a1220;
+  --border: #1a2a3a;
+  --common-c: #7a9bb0;
+  --rare-c: #4a90e8;
+  --epic-c: #a855f7;
+  --legendary-c: #f59e0b;
+  --mythic-c: #ef4444;
+  --text: #c8d8e8;
+  --gold: #fbbf24;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  font-family: 'Rajdhani', sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Animated grid background */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background-image:
+    linear-gradient(#1a2a3a18 1px, transparent 1px),
+    linear-gradient(90deg, #1a2a3a18 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events:none; z-index:0;
+}
+
+.wrapper { max-width: 900px; margin:0 auto; padding:16px; position:relative; z-index:1; }
+
+/* Header */
+.header {
+  text-align:center;
+  padding: 20px 0 16px;
+  position: relative;
+}
+.header::after {
+  content:'';
+  display:block;
+  width:200px; height:2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  margin: 12px auto 0;
+}
+.header h1 {
+  font-family:'Orbitron', monospace;
+  font-size: clamp(1.3rem, 4vw, 2rem);
+  font-weight:900;
+  background: linear-gradient(135deg, #fbbf24, #f97316, #ef4444);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  letter-spacing:3px;
+  text-shadow: none;
+}
+.header p { font-size:.9rem; color:#5a7a9a; margin-top:6px; letter-spacing:1px; }
+
+/* Currency bar */
+.currency-bar {
+  display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
+  margin-bottom:20px;
+}
+.coin-box {
+  background: linear-gradient(135deg, #0a1a2a, #0d1f30);
+  border:1px solid #1a3a5a;
+  border-radius:10px;
+  padding:8px 18px;
+  display:flex; align-items:center; gap:8px;
+  font-family:'Orbitron', monospace;
+}
+.coin-box .lbl { font-size:.65rem; color:#5a8aaa; text-transform:uppercase; letter-spacing:2px; }
+.coin-box .val { font-size:1.1rem; color:var(--gold); font-weight:700; }
+
+/* PULL button area */
+.pull-area {
+  display:flex; gap:10px; justify-content:center;
+  margin-bottom:24px; flex-wrap:wrap;
+}
+
+.pull-btn {
+  position:relative;
+  padding:14px 28px;
+  border:none; border-radius:12px;
+  font-family:'Orbitron', monospace;
+  font-size:.8rem; font-weight:700;
+  letter-spacing:1px;
+  cursor:pointer;
+  overflow:hidden;
+  transition: transform .15s, box-shadow .15s;
+}
+.pull-btn::before {
+  content:'';
+  position:absolute; inset:0;
+  background: linear-gradient(135deg, rgba(255,255,255,.12), transparent);
+  pointer-events:none;
+}
+.pull-btn:hover { transform:translateY(-3px); }
+.pull-btn:active { transform:scale(.96); }
+
+.btn-1 {
+  background: linear-gradient(135deg, #1a3a5a, #0d2040);
+  border:1px solid #2a5a8a;
+  color:#7ab8e8;
+  box-shadow: 0 4px 20px #1a4a7a40;
+}
+.btn-1:hover { box-shadow: 0 8px 30px #1a6aaa60; }
+
+.btn-10 {
+  background: linear-gradient(135deg, #4a2060, #2a0a40);
+  border:1px solid #8a3aaa;
+  color:#d080ff;
+  box-shadow: 0 4px 20px #6a20a040;
+}
+.btn-10:hover { box-shadow: 0 8px 30px #9030c060; }
+
+.btn-cost { font-size:.65rem; opacity:.7; margin-top:2px; }
+
+/* Rates panel */
+.rates-toggle {
+  background:none; border:1px solid #1a3a5a; border-radius:8px;
+  color:#5a8aaa; font-family:'Rajdhani',sans-serif;
+  font-size:.85rem; padding:6px 16px; cursor:pointer;
+  display:block; margin:0 auto 14px;
+  transition: all .2s;
+}
+.rates-toggle:hover { border-color:#2a6aaa; color:#7ab8e8; }
+
+.rates-panel {
+  background:#0a1525;
+  border:1px solid #1a2a3a;
+  border-radius:12px;
+  padding:14px 20px;
+  margin-bottom:20px;
+  display:none;
+}
+.rates-panel.open { display:block; }
+.rates-grid { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+.rate-row {
+  display:flex; align-items:center; gap:8px;
+  background:#0d1a28; border-radius:8px; padding:6px 14px;
+}
+.rate-dot { width:10px; height:10px; border-radius:50%; }
+.rate-name { font-size:.85rem; }
+.rate-pct { font-size:.8rem; opacity:.6; margin-left:auto; }
+
+/* Collection stats */
+.coll-stats {
+  display:flex; gap:8px; justify-content:center; flex-wrap:wrap;
+  margin-bottom:20px;
+}
+.coll-stat {
+  background:#0a1220;
+  border:1px solid #1a2a3a;
+  border-radius:8px;
+  padding:6px 14px;
+  font-size:.8rem;
+  display:flex; align-items:center; gap:6px;
+}
+
+/* Roll animation overlay */
+.roll-overlay {
+  position:fixed; inset:0;
+  background:#00000099;
+  backdrop-filter:blur(6px);
+  z-index:100;
+  display:none;
+  align-items:center; justify-content:center;
+  flex-direction:column;
+}
+.roll-overlay.active { display:flex; }
+
+.roll-cards-row {
+  display:flex; gap:10px; flex-wrap:wrap; justify-content:center;
+  max-width:820px; padding:20px;
+}
+
+/* Card styles */
+.card {
+  width:120px;
+  border-radius:14px;
+  overflow:hidden;
+  position:relative;
+  cursor:pointer;
+  transform: scale(0) rotateY(180deg);
+  animation: cardReveal .5s ease forwards;
+  flex-shrink:0;
+}
+.card.revealed { transform: scale(1) rotateY(0deg); }
+
+@keyframes cardReveal {
+  0% { transform:scale(0) rotateY(180deg); opacity:0; }
+  60% { transform:scale(1.1) rotateY(-5deg); opacity:1; }
+  100% { transform:scale(1) rotateY(0deg); opacity:1; }
+}
+
+.card-inner {
+  background: #0d1a28;
+  border:2px solid;
+  border-radius:14px;
+  padding:8px;
+  position:relative;
+  overflow:hidden;
+}
+
+.card-inner::before {
+  content:'';
+  position:absolute; inset:0;
+  background: linear-gradient(135deg, rgba(255,255,255,.05) 0%, transparent 60%);
+  pointer-events:none;
+}
+
+/* Rarity colors */
+.rarity-COMMON .card-inner   { border-color: var(--common-c); box-shadow: 0 0 10px #7a9bb020; }
+.rarity-RARE .card-inner     { border-color: var(--rare-c);   box-shadow: 0 0 15px #4a90e840; }
+.rarity-EPIC .card-inner     { border-color: var(--epic-c);   box-shadow: 0 0 20px #a855f760; }
+.rarity-LEGENDARY .card-inner{ border-color: var(--legendary-c); box-shadow: 0 0 30px #f59e0b80; }
+.rarity-MYTHIC .card-inner   { border-color: var(--mythic-c); box-shadow: 0 0 40px #ef444480, 0 0 80px #ef444430; }
+
+/* Mythic animated border */
+.rarity-MYTHIC .card-inner::after {
+  content:'';
+  position:absolute; inset:-2px;
+  border-radius:14px;
+  background: linear-gradient(45deg, #ef4444, #f97316, #fbbf24, #ef4444);
+  background-size:300%;
+  animation:borderSpin 2s linear infinite;
+  z-index:-1;
+}
+@keyframes borderSpin { 0%{background-position:0%} 100%{background-position:300%} }
+
+.card-emoji {
+  font-size:2.8rem;
+  text-align:center;
+  display:block;
+  padding:10px 0 6px;
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,.5));
+}
+.card-anime { font-size:.6rem; color:#5a8aaa; text-align:center; letter-spacing:1px; text-transform:uppercase; margin-bottom:2px; }
+.card-name { font-family:'Orbitron',monospace; font-size:.7rem; font-weight:700; text-align:center; line-height:1.2; }
+.card-rarity-badge {
+  text-align:center;
+  font-size:.6rem;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  font-weight:700;
+  padding:3px 8px;
+  border-radius:20px;
+  margin:6px auto 4px;
+  display:block;
+  width:fit-content;
+}
+.rarity-COMMON   .card-rarity-badge { background:#7a9bb020; color:var(--common-c); }
+.rarity-RARE     .card-rarity-badge { background:#4a90e820; color:var(--rare-c); }
+.rarity-EPIC     .card-rarity-badge { background:#a855f720; color:var(--epic-c); }
+.rarity-LEGENDARY .card-rarity-badge { background:#f59e0b20; color:var(--legendary-c); }
+.rarity-MYTHIC   .card-rarity-badge { background:#ef444420; color:var(--mythic-c); animation:pulse .8s ease infinite; }
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+
+.card-power {
+  display:flex; align-items:center; justify-content:center; gap:4px;
+  font-size:.7rem; color:#5a8aaa; margin-bottom:4px;
+}
+.card-power .pw { font-family:'Orbitron',monospace; color:var(--gold); font-size:.8rem; }
+
+.card-stars { text-align:center; font-size:.7rem; margin-bottom:4px; }
+
+/* Confirm button in overlay */
+.confirm-btn {
+  background: linear-gradient(135deg, #1a3a6a, #0d2050);
+  border:1px solid #3a6aaa;
+  border-radius:12px;
+  padding:12px 36px;
+  color:#7ab8e8;
+  font-family:'Orbitron',monospace;
+  font-size:.85rem;
+  cursor:pointer;
+  margin-top:20px;
+  transition: all .2s;
+  letter-spacing:1px;
+}
+.confirm-btn:hover { background: linear-gradient(135deg, #2a4a8a, #1a3070); transform:translateY(-2px); }
+
+/* Collection grid */
+.section-title {
+  font-family:'Orbitron',monospace;
+  font-size:.8rem;
+  letter-spacing:3px;
+  color:#5a8aaa;
+  text-transform:uppercase;
+  margin-bottom:14px;
+  display:flex; align-items:center; gap:10px;
+}
+.section-title::before, .section-title::after {
+  content:''; flex:1; height:1px;
+  background:linear-gradient(90deg, transparent, #1a3a5a);
+}
+.section-title::after { background:linear-gradient(90deg, #1a3a5a, transparent); }
+
+.coll-grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap:10px;
+  margin-bottom:30px;
+}
+
+.coll-card {
+  background:#0a1520;
+  border:1px solid #1a2a3a;
+  border-radius:10px;
+  padding:8px;
+  text-align:center;
+  transition: all .2s;
+  position:relative;
+  cursor:default;
+}
+.coll-card:hover { transform:translateY(-3px); border-color:#2a4a6a; }
+
+.coll-card .count-badge {
+  position:absolute; top:5px; right:5px;
+  background:#0d1a28;
+  border:1px solid #1a3a5a;
+  border-radius:20px;
+  font-size:.6rem; padding:1px 5px;
+  color:var(--gold);
+  font-family:'Orbitron',monospace;
+}
+
+.empty-coll {
+  text-align:center;
+  padding:40px 20px;
+  color:#2a4a6a;
+  font-style:italic;
+  border:1px dashed #1a2a3a;
+  border-radius:12px;
+}
+
+/* Sparkle */
+@keyframes sparklePop {
+  0% { transform:scale(0) translateY(0); opacity:1; }
+  100% { transform:scale(1.4) translateY(-60px); opacity:0; }
+}
+.sparkle {
+  position:fixed; pointer-events:none;
+  font-size:1.4rem;
+  animation:sparklePop .7s ease forwards;
+  z-index:999;
+}
+
+/* Filter tabs */
+.filter-tabs {
+  display:flex; gap:6px; flex-wrap:wrap;
+  margin-bottom:14px; justify-content:center;
+}
+.filter-tab {
+  padding:5px 14px;
+  border-radius:20px;
+  border:1px solid #1a2a3a;
+  background:transparent;
+  color:#5a8aaa;
+  font-family:'Rajdhani',sans-serif;
+  font-size:.85rem;
+  cursor:pointer;
+  transition:all .15s;
+}
+.filter-tab.active, .filter-tab:hover { border-color:#3a6aaa; color:#7ab8e8; background:#0d1a28; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="header">
+    <h1>⚔ ANIME CARTA ⚔</h1>
+    <p>Eng kuchli anime qahramonlarini yig'ing</p>
+  </div>
+
+  <div class="currency-bar">
+    <div class="coin-box">
+      <div>
+        <div class="lbl">💎 Kristall</div>
+        <div class="val" id="gems">300</div>
+      </div>
+    </div>
+    <div class="coin-box">
+      <div>
+        <div class="lbl">🃏 Jami Pull</div>
+        <div class="val" id="total-pulls">0</div>
+      </div>
+    </div>
+    <div class="coin-box">
+      <div>
+        <div class="lbl">⭐ Pity</div>
+        <div class="val" id="pity-count">0/90</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pull-area">
+    <button class="pull-btn btn-1" onclick="doPull(1)">
+      <div>✦ 1x PULL</div>
+      <div class="btn-cost">💎 30 kristall</div>
+    </button>
+    <button class="pull-btn btn-10" onclick="doPull(10)">
+      <div>✦✦ 10x PULL</div>
+      <div class="btn-cost">💎 280 kristall</div>
+    </button>
+  </div>
+
+  <button class="rates-toggle" onclick="toggleRates()">📊 Ehtimollar & Nadir daraja</button>
+  <div class="rates-panel" id="rates-panel">
+    <div class="rates-grid">
+      <div class="rate-row">
+        <div class="rate-dot" style="background:#7a9bb0"></div>
+        <span class="rate-name" style="color:#7a9bb0">ODDIY</span>
+        <span class="rate-pct">55%</span>
+      </div>
+      <div class="rate-row">
+        <div class="rate-dot" style="background:#4a90e8"></div>
+        <span class="rate-name" style="color:#4a90e8">NOYOB</span>
+        <span class="rate-pct">28%</span>
+      </div>
+      <div class="rate-row">
+        <div class="rate-dot" style="background:#a855f7"></div>
+        <span class="rate-name" style="color:#a855f7">EPIK</span>
+        <span class="rate-pct">12%</span>
+      </div>
+      <div class="rate-row">
+        <div class="rate-dot" style="background:#f59e0b"></div>
+        <span class="rate-name" style="color:#f59e0b">AFSONAVIY</span>
+        <span class="rate-pct">4%</span>
+      </div>
+      <div class="rate-row">
+        <div class="rate-dot" style="background:#ef4444"></div>
+        <span class="rate-name" style="color:#ef4444">MIFIK</span>
+        <span class="rate-pct">1%</span>
+      </div>
+    </div>
+    <p style="text-align:center;font-size:.75rem;color:#3a5a7a;margin-top:10px;">90-pullda kafolatlangan AFSONAVIY · Pity tizimi bor</p>
+  </div>
+
+  <div class="coll-stats" id="coll-stats"></div>
+
+  <div class="section-title">Kolleksiyam</div>
+  <div class="filter-tabs" id="filter-tabs">
+    <button class="filter-tab active" onclick="filterBy('ALL',this)">Hammasi</button>
+    <button class="filter-tab" onclick="filterBy('MYTHIC',this)" style="color:#ef4444">MIFIK</button>
+    <button class="filter-tab" onclick="filterBy('LEGENDARY',this)" style="color:#f59e0b">AFSONAVIY</button>
+    <button class="filter-tab" onclick="filterBy('EPIC',this)" style="color:#a855f7">EPIK</button>
+    <button class="filter-tab" onclick="filterBy('RARE',this)" style="color:#4a90e8">NOYOB</button>
+    <button class="filter-tab" onclick="filterBy('COMMON',this)">ODDIY</button>
+  </div>
+  <div class="coll-grid" id="coll-grid">
+    <div class="empty-coll" style="grid-column:1/-1">Hali hech qanday carta yo'q. Pull qiling! 🎴</div>
+  </div>
+
+</div>
+
+<!-- Roll Overlay -->
+<div class="roll-overlay" id="roll-overlay">
+  <div class="roll-cards-row" id="roll-cards-row"></div>
+  <button class="confirm-btn" onclick="closeOverlay()">✦ DAVOM ETISH</button>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  ANIME CHARACTERS DATA
+// ─────────────────────────────────────────────
+const CHARACTERS = [
+  // MYTHIC — eng kuchli, eng kam uchraydi (1%)
+  { id:'goku_ultra', name:'Goku Ultra Instinct', anime:'Dragon Ball Super', emoji:'⚡', rarity:'MYTHIC', power:9999, stars:5 },
+  { id:'saitama',   name:'Saitama',              anime:'One Punch Man',    emoji:'👊', rarity:'MYTHIC', power:9800, stars:5 },
+  { id:'zeno',      name:'Zeno Samai',            anime:'Dragon Ball Super', emoji:'👑', rarity:'MYTHIC', power:9900, stars:5 },
+  { id:'anos',      name:'Anos Voldigoad',        anime:'Maou Gakuin',      emoji:'🩸', rarity:'MYTHIC', power:9700, stars:5 },
+  { id:'rimuru_ev', name:'Rimuru (Ilohiy)',       anime:'Tensura',          emoji:'🌊', rarity:'MYTHIC', power:9600, stars:5 },
+
+  // LEGENDARY — juda kuchli (4%)
+  { id:'naruto_bm', name:'Naruto Baryon Mode',   anime:'Boruto',           emoji:'🦊', rarity:'LEGENDARY', power:8500, stars:5 },
+  { id:'ichigo_fh', name:'Ichigo Final Hollowif',anime:'Bleach',           emoji:'⚔️', rarity:'LEGENDARY', power:8400, stars:5 },
+  { id:'gojo',      name:'Gojo Satoru',           anime:'JJK',              emoji:'🔵', rarity:'LEGENDARY', power:8300, stars:5 },
+  { id:'isagi_ub',  name:'Isagi (Metavision)',    anime:'Blue Lock',        emoji:'🔷', rarity:'LEGENDARY', power:7800, stars:5 },
+  { id:'luffy_g5',  name:'Luffy Gear 5',          anime:'One Piece',        emoji:'☀️', rarity:'LEGENDARY', power:8200, stars:5 },
+  { id:'sung_jinwoo',name:"Sung Jin-Woo (Arisen)", anime:'Solo Leveling',  emoji:'🗡️', rarity:'LEGENDARY', power:8100, stars:5 },
+  { id:'escanor',   name:'Escanor (Kun)',          anime:'7DS',             emoji:'🌞', rarity:'LEGENDARY', power:8000, stars:5 },
+
+  // EPIC — kuchli (12%)
+  { id:'levi',      name:'Levi Ackerman',         anime:'AOT',              emoji:'⚔️', rarity:'EPIC', power:6500, stars:4 },
+  { id:'tanjiro',   name:'Tanjiro Kamado',        anime:'Demon Slayer',     emoji:'🔥', rarity:'EPIC', power:6200, stars:4 },
+  { id:'gon',       name:'Gon Freecss',           anime:'HxH',             emoji:'🌿', rarity:'EPIC', power:6000, stars:4 },
+  { id:'sasuke_ms', name:'Sasuke (MS)',            anime:'Naruto Shippuden', emoji:'🌀', rarity:'EPIC', power:6300, stars:4 },
+  { id:'vegeta_ss', name:'Vegeta Super Saiyan',   anime:'Dragon Ball Z',    emoji:'💥', rarity:'EPIC', power:6800, stars:4 },
+  { id:'kaneki_b',  name:'Kaneki (Black Reaper)',  anime:'Tokyo Ghoul',     emoji:'🕷️', rarity:'EPIC', power:6100, stars:4 },
+  { id:'todoroki',  name:'Todoroki Shoto',         anime:'MHA',              emoji:'🧊', rarity:'EPIC', power:5900, stars:4 },
+  { id:'killua',    name:'Killua Zoldyck',         anime:'HxH',             emoji:'⚡', rarity:'EPIC', power:6400, stars:4 },
+
+  // RARE — o'rtacha (28%)
+  { id:'naruto_n',  name:'Naruto Uzumaki',        anime:'Naruto',           emoji:'🍜', rarity:'RARE', power:4200, stars:3 },
+  { id:'luffy_g4',  name:'Luffy Gear 4',          anime:'One Piece',        emoji:'🥊', rarity:'RARE', power:4500, stars:3 },
+  { id:'edward',    name:'Edward Elric',           anime:'FMA:B',            emoji:'⚙️', rarity:'RARE', power:3900, stars:3 },
+  { id:'eren',      name:'Eren Yeager',            anime:'AOT',              emoji:'🗿', rarity:'RARE', power:4000, stars:3 },
+  { id:'zoro',      name:'Roronoa Zoro',           anime:'One Piece',        emoji:'🗡️', rarity:'RARE', power:4300, stars:3 },
+  { id:'ash_pk',    name:'Ash Ketchum',            anime:'Pokemon',          emoji:'⚡', rarity:'RARE', power:3700, stars:3 },
+  { id:'midoriya',  name:'Midoriya Izuku',         anime:'MHA',              emoji:'💚', rarity:'RARE', power:4100, stars:3 },
+  { id:'kenshin',   name:'Kenshin Himura',         anime:'Rurouni Kenshin',  emoji:'🌸', rarity:'RARE', power:3800, stars:3 },
+  { id:'senku',     name:'Senku Ishigami',         anime:'Dr. Stone',        emoji:'🧪', rarity:'RARE', power:3500, stars:3 },
+  { id:'itachi',    name:'Itachi Uchiha',          anime:'Naruto',           emoji:'🌑', rarity:'RARE', power:4600, stars:3 },
+
+  // COMMON — kuchsiz, ko'p tushadi (55%)
+  { id:'goku_base', name:'Goku (Base)',            anime:'Dragon Ball',      emoji:'🐉', rarity:'COMMON', power:1500, stars:1 },
+  { id:'nami',      name:'Nami',                  anime:'One Piece',        emoji:'⛅', rarity:'COMMON', power:900,  stars:1 },
+  { id:'sakura',    name:'Sakura Haruno',          anime:'Naruto',           emoji:'🌸', rarity:'COMMON', power:800,  stars:1 },
+  { id:'usopp',     name:'Usopp',                 anime:'One Piece',        emoji:'🔫', rarity:'COMMON', power:700,  stars:1 },
+  { id:'zenitsu',   name:'Zenitsu Agatsuma',      anime:'Demon Slayer',     emoji:'⚡', rarity:'COMMON', power:1800, stars:2 },
+  { id:'inosuke',   name:'Inosuke Hashibira',     anime:'Demon Slayer',     emoji:'🐗', rarity:'COMMON', power:1600, stars:2 },
+  { id:'mineta',    name:'Mineta',                anime:'MHA',              emoji:'🍇', rarity:'COMMON', power:400,  stars:1 },
+  { id:'rock_lee',  name:'Rock Lee',              anime:'Naruto',           emoji:'💪', rarity:'COMMON', power:1200, stars:2 },
+  { id:'bulma',     name:'Bulma',                 anime:'Dragon Ball',      emoji:'💙', rarity:'COMMON', power:300,  stars:1 },
+  { id:'konohamaru',name:'Konohamaru',            anime:'Naruto',           emoji:'🌀', rarity:'COMMON', power:1000, stars:2 },
+  { id:'chopper',   name:'Tony Chopper',          anime:'One Piece',        emoji:'🦌', rarity:'COMMON', power:1100, stars:2 },
+  { id:'krillin',   name:'Krillin',               anime:'Dragon Ball Z',    emoji:'🥚', rarity:'COMMON', power:1300, stars:2 },
+];
+
+// Rarity weights → probability
+const RARITY_WEIGHTS = {
+  COMMON:    55,
+  RARE:      28,
+  EPIC:      12,
+  LEGENDARY:  4,
+  MYTHIC:     1,
+};
+
+// ─────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────
+let gems = 300;
+let totalPulls = 0;
+let pity = 0;           // Pity counter for guaranteed legendary at 90
+let collection = {};    // { charId: count }
+let activeFilter = 'ALL';
+
+// ─────────────────────────────────────────────
+//  GACHA LOGIC
+// ─────────────────────────────────────────────
+function rollOne() {
+  pity++;
+  // Pity guarantee
+  let forcedRarity = null;
+  if (pity >= 90) { forcedRarity = 'LEGENDARY'; pity = 0; }
+
+  let rarity;
+  if (forcedRarity) {
+    rarity = forcedRarity;
+  } else {
+    const rand = Math.random() * 100;
+    if (rand < 1)       rarity = 'MYTHIC';
+    else if (rand < 5)  rarity = 'LEGENDARY';
+    else if (rand < 17) rarity = 'EPIC';
+    else if (rand < 45) rarity = 'RARE';
+    else                rarity = 'COMMON';
+    // Reset pity on legendary+
+    if (rarity === 'LEGENDARY' || rarity === 'MYTHIC') pity = 0;
+  }
+
+  const pool = CHARACTERS.filter(c => c.rarity === rarity);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function doPull(count) {
+  const cost = count === 1 ? 30 : 280;
+  if (gems < cost) {
+    showToast('Kristall yetarli emas! 💎');
+    return;
+  }
+  gems -= cost;
+  totalPulls += count;
+
+  const results = [];
+  for (let i = 0; i < count; i++) results.push(rollOne());
+
+  // Add to collection
+  results.forEach(c => {
+    collection[c.id] = (collection[c.id] || 0) + 1;
+  });
+
+  updateUI();
+  showRollOverlay(results);
+}
+
+// ─────────────────────────────────────────────
+//  RENDER
+// ─────────────────────────────────────────────
+function rarityLabel(r) {
+  const map = { COMMON:'ODDIY', RARE:'NOYOB', EPIC:'EPIK', LEGENDARY:'AFSONAVIY', MYTHIC:'MIFIK' };
+  return map[r] || r;
+}
+
+function makeCardHTML(char, delay=0) {
+  const stars = '⭐'.repeat(char.stars);
+  return `
+    <div class="card rarity-${char.rarity}" style="animation-delay:${delay}ms">
+      <div class="card-inner">
+        <span class="card-emoji">${char.emoji}</span>
+        <div class="card-anime">${char.anime}</div>
+        <div class="card-name">${char.name}</div>
+        <span class="card-rarity-badge">${rarityLabel(char.rarity)}</span>
+        <div class="card-stars">${stars}</div>
+        <div class="card-power">⚡<span class="pw">${char.power.toLocaleString()}</span></div>
+      </div>
+    </div>`;
+}
+
+function showRollOverlay(results) {
+  const row = document.getElementById('roll-cards-row');
+  row.innerHTML = results.map((c,i) => makeCardHTML(c, i*80)).join('');
+  document.getElementById('roll-overlay').classList.add('active');
+
+  // Spawn sparkles for legendary+
+  results.forEach((c,i) => {
+    if (c.rarity === 'LEGENDARY' || c.rarity === 'MYTHIC') {
+      setTimeout(() => {
+        for (let j=0;j<6;j++) spawnSparkle(
+          window.innerWidth/2 + (Math.random()-.5)*400,
+          window.innerHeight/2 + (Math.random()-.5)*300
+        );
+      }, i*80 + 400);
+    }
+  });
+}
+
+function closeOverlay() {
+  document.getElementById('roll-overlay').classList.remove('active');
+  renderCollection();
+}
+
+function updateUI() {
+  document.getElementById('gems').textContent = gems;
+  document.getElementById('total-pulls').textContent = totalPulls;
+  document.getElementById('pity-count').textContent = pity + '/90';
+
+  // Collection stats
+  const counts = { COMMON:0, RARE:0, EPIC:0, LEGENDARY:0, MYTHIC:0 };
+  Object.entries(collection).forEach(([id, cnt]) => {
+    const c = CHARACTERS.find(x=>x.id===id);
+    if (c) counts[c.rarity] += cnt;
+  });
+  const total = Object.values(counts).reduce((a,b)=>a+b,0);
+
+  const sc = document.getElementById('coll-stats');
+  const colors = { COMMON:'#7a9bb0', RARE:'#4a90e8', EPIC:'#a855f7', LEGENDARY:'#f59e0b', MYTHIC:'#ef4444' };
+  sc.innerHTML = `
+    <div class="coll-stat">🃏 Jami: <b style="color:var(--gold)">${total}</b></div>
+    ${Object.entries(counts).filter(([,v])=>v>0).map(([r,v])=>`
+      <div class="coll-stat"><span style="color:${colors[r]}">${rarityLabel(r)}: ${v}</span></div>
+    `).join('')}
+  `;
+}
+
+function renderCollection() {
+  const grid = document.getElementById('coll-grid');
+  const entries = Object.entries(collection);
+  if (!entries.length) {
+    grid.innerHTML = '<div class="empty-coll" style="grid-column:1/-1">Hali hech qanday carta yo\'q. Pull qiling! 🎴</div>';
+    return;
+  }
+
+  // Filter
+  let filtered = entries.map(([id,cnt]) => ({ char: CHARACTERS.find(x=>x.id===id), cnt }))
+    .filter(e => e.char && (activeFilter === 'ALL' || e.char.rarity === activeFilter));
+
+  // Sort by power desc
+  filtered.sort((a,b) => b.char.power - a.char.power);
+
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="empty-coll" style="grid-column:1/-1">Bu rarityda carta yo\'q.</div>';
+    return;
+  }
+
+  const colorMap = { COMMON:'#7a9bb0', RARE:'#4a90e8', EPIC:'#a855f7', LEGENDARY:'#f59e0b', MYTHIC:'#ef4444' };
+
+  grid.innerHTML = filtered.map(({char:c, cnt}) => `
+    <div class="coll-card rarity-${c.rarity}" style="border-color:${colorMap[c.rarity]}30">
+      ${cnt>1 ? `<div class="count-badge">x${cnt}</div>` : ''}
+      <div style="font-size:2rem;margin-bottom:4px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))">${c.emoji}</div>
+      <div style="font-size:.6rem;color:#5a8aaa;letter-spacing:1px">${c.anime}</div>
+      <div style="font-family:'Orbitron',monospace;font-size:.6rem;margin:3px 0;line-height:1.2">${c.name}</div>
+      <div style="font-size:.6rem;color:${colorMap[c.rarity]};letter-spacing:1px">${rarityLabel(c.rarity)}</div>
+      <div style="font-size:.65rem;color:var(--gold);font-family:'Orbitron',monospace;margin-top:3px">⚡${c.power.toLocaleString()}</div>
+      <div style="font-size:.6rem;margin-top:2px">${'⭐'.repeat(c.stars)}</div>
+    </div>
+  `).join('');
+}
+
+function filterBy(rarity, btn) {
+  activeFilter = rarity;
+  document.querySelectorAll('.filter-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCollection();
+}
+
+function toggleRates() {
+  document.getElementById('rates-panel').classList.toggle('open');
+}
+
+function spawnSparkle(x, y) {
+  const emojis = ['✨','⭐','💫','🌟','💥','🔥'];
+  const s = document.createElement('div');
+  s.className = 'sparkle';
+  s.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+  s.style.left = x + 'px';
+  s.style.top = y + 'px';
+  document.body.appendChild(s);
+  setTimeout(() => s.remove(), 800);
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1a0a0a;border:1px solid #ef4444;color:#ff8080;padding:10px 20px;border-radius:10px;z-index:9999;font-family:Rajdhani;font-size:.95rem;';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2500);
+}
+
+// Init
+updateUI();
+renderCollection();
+</script>
+</body>
+</html>
